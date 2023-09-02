@@ -1,0 +1,6 @@
+BasedOnStyle: Google
+DerivePointerAlignment: false
+PointerAlignment: Right
+ColumnLimit: 100
+AlignTrailingComments: true
+IncludeBlocks: Preserve
