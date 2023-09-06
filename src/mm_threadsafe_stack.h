@@ -7,6 +7,8 @@
 
 #include <atomic>   // std::atomic
 #include <memory>   // std::unique_ptr
+#include <mutex>    // std::mutex
+#include <stack>    // std::stack
 #include <tuple>    // std::ignore
 #include <utility>  // std::move
 
@@ -175,6 +177,57 @@ class LockFreeStack {
 
  private:
   ::std::atomic<NodeWrapper> m_head{};
+};
+
+/**
+ * A simplest lock-based stack. (IT IS LOW PERFORMANCE, SO DO NOT USE IT).
+ *
+ * @tparam T
+ */
+template <typename T>
+class LockBasedStack {
+ public:
+  LockBasedStack() = default;
+  ~LockBasedStack() = default;
+
+  LockBasedStack(LockBasedStack const &other) {
+    ::std::lock_guard<::std::mutex> lock(other.m_latch);
+    m_data = other.m_data;
+  }
+  LockBasedStack(LockBasedStack &&other) noexcept {
+    ::std::lock_guard<::std::mutex> lock(other.m_latch);
+    m_data = ::std::move(other.m_data);
+  }
+
+  // We need to remove these two functions because they may cause deadlock.
+  LockBasedStack &operator=(LockBasedStack &&) = delete;
+  LockBasedStack &operator=(LockBasedStack const &) = delete;
+
+ public:
+  void Push(T data) {
+    ::std::unique_ptr<T> pData = ::std::make_unique<T>(::std::move(data));
+    ::std::lock_guard<::std::mutex> lock(m_latch);
+    m_data.push(::std::move(pData));
+  }
+
+  ::std::unique_ptr<T> Pop() {
+    ::std::lock_guard<::std::mutex> lock(m_latch);
+    if (m_data.empty()) {
+      return nullptr;
+    }
+    ::std::unique_ptr<T> res = ::std::move(m_data.top());
+    m_data.pop();
+    return res;
+  }
+
+  bool Empty() const {
+    ::std::lock_guard<::std::mutex> lock(m_latch);
+    return m_data.empty();
+  }
+
+ private:
+  ::std::stack<::std::unique_ptr<T>> m_data;
+  mutable ::std::mutex m_latch;
 };
 
 }  // namespace mm
