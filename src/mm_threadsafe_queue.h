@@ -91,9 +91,9 @@ class LockFreeQueue {
    *
    * @param data
    */
-  void Push(T const &data) {
+  void Push(T data) {
     // Prepare the new data in advance.
-    auto pNewData = ::std::make_unique<T>(data);
+    auto pNewData = ::std::make_unique<T>(::std::move(data));
     NodeWrapper nextNodeWrapper;
     nextNodeWrapper.pNode = new Node;
     nextNodeWrapper.externalCount = 1;

@@ -80,7 +80,7 @@ class LockFreeStack {
    *
    * @param data The data that be pushed on the stack.
    */
-  void Push(T const &data) {
+  void Push(T data) {
     // Create a new node before push it on the stack, so it is exception safe when pop it because we
     // only need to pass the pointer out and there is no copying.(Exception will only occur here
     // when create it before pushing.)
@@ -89,7 +89,7 @@ class LockFreeStack {
     // Because the newNodeWrapper will be the new header, thus there is one external reference to
     // it(that is m_head).
     newNodeWrapper.externalCount = 1;
-    newNodeWrapper.pNode = new Node(data);
+    newNodeWrapper.pNode = new Node(::std::move(data));
     newNodeWrapper.pNode->nextNode = m_head.load(::std::memory_order::relaxed);
     while (!m_head.compare_exchange_weak(newNodeWrapper.pNode->nextNode, newNodeWrapper,
                                          ::std::memory_order::release,
